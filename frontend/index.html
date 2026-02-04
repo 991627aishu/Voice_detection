@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Detection System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                        <circle cx="20" cy="20" r="18" fill="url(#gradient)"/>
+                        <path d="M20 10 L20 30 M10 20 L30 20" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <h1>AI Voice Detection</h1>
+                </div>
+                <p class="subtitle">Multi-Language Voice Authenticity Analyzer</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Request Section -->
+            <div class="card request-section">
+                <h2>Request Body *</h2>
+                
+                <!-- Base64 Input -->
+                <div class="base64-mode">
+                    <label for="base64Input">Audio Base64 Format *</label>
+                    <textarea 
+                        id="base64Input" 
+                        class="base64-input" 
+                        placeholder="Paste your Base64-encoded MP3 audio here..."
+                        rows="8"
+                    ></textarea>
+                    <div class="base64-info">
+                        <span class="base64-length" id="base64Length">0 characters</span>
+                    </div>
+                </div>
+
+                <!-- Language Selection -->
+                <div class="language-section">
+                    <label for="languageSelect">Language *</label>
+                    <select id="languageSelect" class="language-select">
+                        <option value="Tamil">Tamil</option>
+                        <option value="English" selected>English</option>
+                        <option value="Hindi">Hindi</option>
+                        <option value="Malayalam">Malayalam</option>
+                        <option value="Telugu">Telugu</option>
+                    </select>
+                </div>
+
+                <!-- Audio Format -->
+                <div class="audio-format-section">
+                    <label for="audioFormatInput">Audio Format *</label>
+                    <input type="text" id="audioFormatInput" class="audio-format-input" value="mp3" readonly>
+                </div>
+            </div>
+
+            <!-- Headers Section -->
+            <div class="card headers-section">
+                <h2>Headers *</h2>
+                <div class="api-key-section">
+                    <label for="apiKeyInput">x-api-key *</label>
+                    <input type="text" id="apiKeyInput" class="api-key-input" placeholder="Enter your API key" value="sk_test_123456789">
+                </div>
+            </div>
+
+            <!-- Endpoint Section -->
+            <div class="card endpoint-section-card">
+                <h2>Endpoint URL *</h2>
+                <input type="text" id="endpointInput" class="endpoint-input" placeholder="https://your-api.com/api/voice-detection" value="http://localhost:8000/api/voice-detection">
+            </div>
+
+            <!-- Analyze Button -->
+            <div class="card analyze-section">
+                <button class="analyze-btn" id="analyzeBtn" disabled>
+                    <span class="btn-text">Analyze Voice</span>
+                    <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+
+            <!-- Results Section -->
+            <div class="card results-section" id="resultsSection" style="display: none;">
+                <h2>Detection Results</h2>
+                <div class="result-content">
+                    <div class="classification-badge" id="classificationBadge">
+                        <span id="classificationText"></span>
+                    </div>
+                    <div class="confidence-meter">
+                        <div class="confidence-label">
+                            <span>Confidence Score</span>
+                            <span id="confidenceValue">0%</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill" id="meterFill"></div>
+                        </div>
+                    </div>
+                    <div class="result-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Language:</span>
+                            <span class="detail-value" id="resultLanguage"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value" id="resultStatus"></span>
+                        </div>
+                    </div>
+                    <div class="explanation-box">
+                        <h3>Analysis Explanation</h3>
+                        <p id="explanationText"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Analyzing audio...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage" style="display: none;"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>AI Voice Detection System | Supports Tamil, English, Hindi, Malayalam, Telugu</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
