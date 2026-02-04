@@ -1,5 +1,4 @@
 // API Configuration
-// ⚠️ CHANGE THIS TO YOUR RENDER BACKEND URL
 let API_URL = 'https://voice-detection-3qdu.onrender.com/api/voice-detection';
 
 // DOM Elements
@@ -16,7 +15,7 @@ const errorMessage = document.getElementById('errorMessage');
 
 let currentBase64 = '';
 
-// Set default endpoint input value on page load
+// Set default endpoint
 endpointInput.value = API_URL;
 
 // Base64 Input Handler
@@ -28,75 +27,62 @@ base64Input.addEventListener('input', (e) => {
 
 // Endpoint URL Handler
 endpointInput.addEventListener('input', (e) => {
-    API_URL = e.target.value.trim() || 'https://voice-detection-3qdu.onrender.com/api/voice-detection';
-    updateAnalyzeButton();
-});
-
-// API Key Input Handler
-apiKeyInput.addEventListener('input', () => {
+    API_URL = e.target.value.trim() || API_URL;
     updateAnalyzeButton();
 });
 
 // Update Analyze Button State
 function updateAnalyzeButton() {
-    analyzeBtn.disabled = !currentBase64 || !apiKeyInput.value.trim() || !endpointInput.value.trim();
+    analyzeBtn.disabled = !currentBase64 || !endpointInput.value.trim();
 }
 
 // Analyze Button Click
 analyzeBtn.addEventListener('click', async () => {
-    const apiKey = apiKeyInput.value.trim();
-    if (!apiKey) {
-        showError('Please enter an API key');
-        return;
-    }
-
-    if (!currentBase64) {
-        showError('Please paste Base64-encoded audio');
-        return;
-    }
-
-    const endpoint = endpointInput.value.trim();
-    if (!endpoint) {
-        showError('Please enter an endpoint URL');
-        return;
-    }
-
+    const endpoint = endpointInput.value.trim() || API_URL;
+    const apiKey = apiKeyInput.value.trim(); // optional
     const language = languageSelect.value;
     const audioFormat = audioFormatInput.value;
+
+    if (!currentBase64) {
+        showError('Please paste Base64 audio');
+        return;
+    }
 
     try {
         loadingOverlay.style.display = 'flex';
         hideError();
 
-        // Clean Base64 string
         const base64Audio = currentBase64.replace(/^data:audio\/[^;]+;base64,/, '');
 
-        // Make API request
+        // Timeout controller
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 30000);
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-api-key': apiKey
+                ...(apiKey && { 'x-api-key': apiKey })
             },
             body: JSON.stringify({
-                language: language,
-                audioFormat: audioFormat,
+                language,
+                audioFormat,
                 audioBase64: base64Audio
-            })
+            }),
+            signal: controller.signal
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || data.detail || 'API request failed');
+            throw new Error(data.detail || 'API failed');
         }
 
-        // Display results
         displayResults(data);
 
     } catch (error) {
-        console.error('Error:', error);
-        showError(error.message || 'Failed to analyze audio. Please try again.');
+        console.error(error);
+        showError('Server unreachable or audio too large');
     } finally {
         loadingOverlay.style.display = 'none';
     }
@@ -104,34 +90,27 @@ analyzeBtn.addEventListener('click', async () => {
 
 // Display Results
 function displayResults(data) {
-    if (data.status !== 'success') {
-        showError(data.message || 'Analysis failed');
-        return;
-    }
-
     const classificationBadge = document.getElementById('classificationBadge');
     const classificationText = document.getElementById('classificationText');
 
-    classificationBadge.className = 'classification-badge ' +
+    classificationBadge.className =
+        'classification-badge ' +
         (data.classification === 'AI_GENERATED' ? 'ai-generated' : 'human');
+
     classificationText.textContent =
         data.classification === 'AI_GENERATED'
             ? '🤖 AI Generated'
             : '👤 Human Voice';
 
-    const confidenceValue = document.getElementById('confidenceValue');
-    const meterFill = document.getElementById('meterFill');
     const confidence = Math.round(data.confidenceScore * 100);
-
-    confidenceValue.textContent = `${confidence}%`;
-    meterFill.style.width = `${confidence}%`;
+    document.getElementById('confidenceValue').textContent = `${confidence}%`;
+    document.getElementById('meterFill').style.width = `${confidence}%`;
 
     document.getElementById('resultLanguage').textContent = data.language;
     document.getElementById('resultStatus').textContent = data.status;
     document.getElementById('explanationText').textContent = data.explanation;
 
     resultsSection.style.display = 'block';
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Show Error
@@ -147,4 +126,4 @@ function hideError() {
 
 // Initialize
 updateAnalyzeButton();
-console.log('AI Voice Detection System initialized');
+console.log('AI Voice Detection System Ready');
