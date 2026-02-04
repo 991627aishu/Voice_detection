@@ -31,6 +31,7 @@
 
         <!-- Main Content -->
         <main class="main-content">
+
             <!-- Request Section -->
             <div class="card request-section">
                 <h2>Request Body *</h2>
@@ -80,7 +81,12 @@
             <!-- Endpoint Section -->
             <div class="card endpoint-section-card">
                 <h2>Endpoint URL *</h2>
-                <input type="text" id="endpointInput" class="endpoint-input" placeholder="https://your-api.com/api/voice-detection" value="http://localhost:8000/api/voice-detection">
+                <input 
+                    type="text" 
+                    id="endpointInput" 
+                    class="endpoint-input" 
+                    placeholder="https://your-api.com/api/voice-detection" 
+                    value="https://voice-detection-3qdu.onrender.com/api/voice-detection">
             </div>
 
             <!-- Analyze Button -->
@@ -92,7 +98,6 @@
                     </svg>
                 </button>
             </div>
-
 
             <!-- Results Section -->
             <div class="card results-section" id="resultsSection" style="display: none;">
@@ -135,6 +140,7 @@
 
             <!-- Error Message -->
             <div class="error-message" id="errorMessage" style="display: none;"></div>
+
         </main>
 
         <!-- Footer -->
@@ -146,4 +152,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
