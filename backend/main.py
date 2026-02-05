@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="AI Voice Detection API",
     description="Detect AI-generated vs Human voices",
-    version="6.0.0"
+    version="7.0.0"
 )
 
 # ---------------- CORS ----------------
@@ -79,25 +79,25 @@ def detect_ai_voice(f):
 
     # MFCC smoothness
     if f["mfcc_std"] < 18:
-        ai_score += 3
+        ai_score += 2
     else:
         human_score += 2
 
     # RMS energy
     if 0.02 < f["rms"] < 0.12:
-        ai_score += 2
+        ai_score += 1
     else:
         human_score += 1
 
     # Zero Crossing Rate
     if f["zcr"] < 0.15:
-        ai_score += 2
+        ai_score += 1
     else:
         human_score += 1
 
     # Spectral centroid
     if f["centroid"] < 3500:
-        ai_score += 2
+        ai_score += 1
     else:
         human_score += 1
 
@@ -116,11 +116,11 @@ def detect_ai_voice(f):
     total = ai_score + human_score
     confidence = round(max(ai_score, human_score) / total, 2)
 
-    if ai_score >= human_score:
+    if ai_score > human_score:
         return (
             "AI_GENERATED",
             confidence,
-            "Unnatural spectral stability and smooth MFCC detected"
+            "Synthetic smoothness and spectral uniformity detected"
         )
 
     return (
@@ -137,23 +137,13 @@ async def detect_voice(request: VoiceDetectionRequest, _: bool = Depends(verify_
         if request.language not in SUPPORTED_LANGUAGES:
             raise HTTPException(status_code=400, detail="Unsupported language")
 
+        # Remove data prefix if exists
         clean_base64 = request.audioBase64.split(",")[-1]
 
         try:
             audio_bytes = base64.b64decode(clean_base64)
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid Base64")
-
-        # -------- METADATA AI DETECTION --------
-        lower_bytes = audio_bytes.lower()
-        if b"elevenlabs" in lower_bytes or b"c2pa" in lower_bytes or b"ai voice" in lower_bytes:
-            return VoiceDetectionResponse(
-                status="success",
-                language=request.language,
-                classification="AI_GENERATED",
-                confidenceScore=0.99,
-                explanation="AI signature metadata detected in audio file"
-            )
 
         audio_io = io.BytesIO(audio_bytes)
         audio_data, sr = librosa.load(audio_io, sr=22050, mono=True)
