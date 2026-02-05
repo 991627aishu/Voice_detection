@@ -1,5 +1,5 @@
 // API Configuration
-let API_URL = 'https://voice-detection-3qdu.onrender.com/api/voice-detection';
+let API_URL = 'https://voice-detection-backend.onrender.com/api/voice-detection';
 
 // DOM Elements
 const languageSelect = document.getElementById('languageSelect');
