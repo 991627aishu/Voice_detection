@@ -1,5 +1,6 @@
 // API Configuration
-let API_URL = 'https://voice-detection-backend.onrender.com/api/voice-detection';
+const DEFAULT_API_URL = 'https://voice-detection-backend.onrender.com/api/voice-detection';
+let API_URL = DEFAULT_API_URL;
 
 // DOM Elements
 const languageSelect = document.getElementById('languageSelect');
@@ -15,8 +16,8 @@ const errorMessage = document.getElementById('errorMessage');
 
 let currentBase64 = '';
 
-// Set default endpoint
-endpointInput.value = API_URL;
+// Default endpoint
+endpointInput.value = DEFAULT_API_URL;
 
 // Base64 Input Handler
 base64Input.addEventListener('input', (e) => {
@@ -25,26 +26,26 @@ base64Input.addEventListener('input', (e) => {
     updateAnalyzeButton();
 });
 
-// Endpoint URL Handler
+// Endpoint Handler
 endpointInput.addEventListener('input', (e) => {
-    API_URL = e.target.value.trim() || API_URL;
+    API_URL = e.target.value.trim() || DEFAULT_API_URL;
     updateAnalyzeButton();
 });
 
-// Update Analyze Button State
+// Enable / Disable Button
 function updateAnalyzeButton() {
-    analyzeBtn.disabled = !currentBase64 || !endpointInput.value.trim();
+    analyzeBtn.disabled = currentBase64.length < 20;
 }
 
-// Analyze Button Click
+// Analyze Button
 analyzeBtn.addEventListener('click', async () => {
-    const endpoint = endpointInput.value.trim() || API_URL;
-    const apiKey = apiKeyInput.value.trim(); // optional
+    const endpoint = endpointInput.value.trim() || DEFAULT_API_URL;
+    const apiKey = apiKeyInput.value.trim();
     const language = languageSelect.value;
     const audioFormat = audioFormatInput.value;
 
-    if (!currentBase64) {
-        showError('Please paste Base64 audio');
+    if (!currentBase64 || currentBase64.length < 20) {
+        showError('Paste valid Base64 audio');
         return;
     }
 
@@ -54,9 +55,8 @@ analyzeBtn.addEventListener('click', async () => {
 
         const base64Audio = currentBase64.replace(/^data:audio\/[^;]+;base64,/, '');
 
-        // Timeout controller
         const controller = new AbortController();
-        setTimeout(() => controller.abort(), 30000);
+        setTimeout(() => controller.abort(), 60000); // 60 sec
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -75,14 +75,14 @@ analyzeBtn.addEventListener('click', async () => {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.detail || 'API failed');
+            throw new Error(data.detail || 'API Failed');
         }
 
         displayResults(data);
 
     } catch (error) {
         console.error(error);
-        showError('Server unreachable or audio too large');
+        showError('Server unreachable OR audio too large (>1MB)');
     } finally {
         loadingOverlay.style.display = 'none';
     }
@@ -113,17 +113,16 @@ function displayResults(data) {
     resultsSection.style.display = 'block';
 }
 
-// Show Error
-function showError(message) {
-    errorMessage.textContent = message;
+// Error
+function showError(msg) {
+    errorMessage.textContent = msg;
     errorMessage.style.display = 'block';
 }
 
-// Hide Error
 function hideError() {
     errorMessage.style.display = 'none';
 }
 
-// Initialize
+// Init
 updateAnalyzeButton();
-console.log('AI Voice Detection System Ready');
+console.log('Voice Detection Frontend Ready');
