@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="AI Voice Detection API",
     description="Detect AI-generated vs Human voices",
-    version="7.0.0"
+    version="8.0.0"
 )
 
 # ---------------- CORS ----------------
@@ -77,38 +77,38 @@ def detect_ai_voice(f):
     ai_score = 0
     human_score = 0
 
-    # MFCC smoothness
-    if f["mfcc_std"] < 18:
+    # MFCC Smoothness
+    if f["mfcc_std"] < 22:
         ai_score += 2
     else:
         human_score += 2
 
-    # RMS energy
-    if 0.02 < f["rms"] < 0.12:
+    # RMS Energy
+    if 0.01 < f["rms"] < 0.05:
         ai_score += 1
     else:
         human_score += 1
 
     # Zero Crossing Rate
-    if f["zcr"] < 0.15:
+    if f["zcr"] < 0.08:
         ai_score += 1
     else:
         human_score += 1
 
-    # Spectral centroid
-    if f["centroid"] < 3500:
+    # Spectral Centroid
+    if f["centroid"] < 2800:
         ai_score += 1
     else:
         human_score += 1
 
     # Bandwidth
-    if f["bandwidth"] < 4200:
+    if f["bandwidth"] < 3500:
         ai_score += 1
     else:
         human_score += 1
 
     # Rolloff
-    if f["rolloff"] < 6000:
+    if f["rolloff"] < 5000:
         ai_score += 1
     else:
         human_score += 1
@@ -116,17 +116,18 @@ def detect_ai_voice(f):
     total = ai_score + human_score
     confidence = round(max(ai_score, human_score) / total, 2)
 
-    if ai_score > human_score:
+    # IMPORTANT BALANCE LOGIC
+    if ai_score > human_score + 1:
         return (
             "AI_GENERATED",
             confidence,
-            "Synthetic smoothness and spectral uniformity detected"
+            "Smooth spectral patterns and low pitch variation detected"
         )
 
     return (
         "HUMAN",
         confidence,
-        "Natural pitch variation and dynamic spectral fluctuations detected"
+        "Natural pitch variation and dynamic speech characteristics detected"
     )
 
 
@@ -137,7 +138,6 @@ async def detect_voice(request: VoiceDetectionRequest, _: bool = Depends(verify_
         if request.language not in SUPPORTED_LANGUAGES:
             raise HTTPException(status_code=400, detail="Unsupported language")
 
-        # Remove data prefix if exists
         clean_base64 = request.audioBase64.split(",")[-1]
 
         try:
