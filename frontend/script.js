@@ -1,8 +1,8 @@
-// API Configuration
+// ================= API CONFIG =================
 const DEFAULT_API_URL = 'https://voice-detection-backend.onrender.com/api/voice-detection';
 let API_URL = DEFAULT_API_URL;
 
-// DOM Elements
+// ================= DOM ELEMENTS =================
 const languageSelect = document.getElementById('languageSelect');
 const audioFormatInput = document.getElementById('audioFormatInput');
 const apiKeyInput = document.getElementById('apiKeyInput');
@@ -19,44 +19,54 @@ let currentBase64 = '';
 // Default endpoint
 endpointInput.value = DEFAULT_API_URL;
 
-// Base64 Input Handler
+// ================= BASE64 INPUT =================
 base64Input.addEventListener('input', (e) => {
     currentBase64 = e.target.value.trim();
     base64Length.textContent = `${currentBase64.length} characters`;
     updateAnalyzeButton();
 });
 
-// Endpoint Handler
+// ================= ENDPOINT INPUT =================
 endpointInput.addEventListener('input', (e) => {
     API_URL = e.target.value.trim() || DEFAULT_API_URL;
     updateAnalyzeButton();
 });
 
-// Enable / Disable Button
+// ================= BUTTON ENABLE =================
 function updateAnalyzeButton() {
-    analyzeBtn.disabled = currentBase64.length < 20;
+    analyzeBtn.disabled = currentBase64.length < 50; // minimum length
 }
 
-// Analyze Button
+// ================= ANALYZE CLICK =================
 analyzeBtn.addEventListener('click', async () => {
     const endpoint = endpointInput.value.trim() || DEFAULT_API_URL;
     const apiKey = apiKeyInput.value.trim();
     const language = languageSelect.value;
     const audioFormat = audioFormatInput.value;
 
-    if (!currentBase64 || currentBase64.length < 20) {
-        showError('Paste valid Base64 audio');
+    if (!currentBase64 || currentBase64.length < 50) {
+        showError('Paste valid Base64 audio (too short)');
         return;
     }
 
     try {
         loadingOverlay.style.display = 'flex';
         hideError();
+        resultsSection.style.display = 'none';
 
+        // Remove data prefix if exists
         const base64Audio = currentBase64.replace(/^data:audio\/[^;]+;base64,/, '');
 
+        // Size check (~1MB base64 ≈ 750KB file)
+        if (base64Audio.length > 1400000) {
+            showError('Audio too large. Use <10 sec MP3');
+            loadingOverlay.style.display = 'none';
+            return;
+        }
+
+        // ===== TIMEOUT FIX (Render Cold Start) =====
         const controller = new AbortController();
-        setTimeout(() => controller.abort(), 60000); // 60 sec
+        setTimeout(() => controller.abort(), 120000); // 2 minutes
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -72,7 +82,12 @@ analyzeBtn.addEventListener('click', async () => {
             signal: controller.signal
         });
 
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            throw new Error('Invalid server response');
+        }
 
         if (!response.ok) {
             throw new Error(data.detail || 'API Failed');
@@ -82,13 +97,18 @@ analyzeBtn.addEventListener('click', async () => {
 
     } catch (error) {
         console.error(error);
-        showError('Server unreachable OR audio too large (>1MB)');
+
+        if (error.name === 'AbortError') {
+            showError('Backend waking up... wait 1 minute and retry');
+        } else {
+            showError('Server unreachable or audio too large');
+        }
     } finally {
         loadingOverlay.style.display = 'none';
     }
 });
 
-// Display Results
+// ================= DISPLAY RESULTS =================
 function displayResults(data) {
     const classificationBadge = document.getElementById('classificationBadge');
     const classificationText = document.getElementById('classificationText');
@@ -102,18 +122,18 @@ function displayResults(data) {
             ? '🤖 AI Generated'
             : '👤 Human Voice';
 
-    const confidence = Math.round(data.confidenceScore * 100);
+    const confidence = Math.round((data.confidenceScore || 0) * 100);
     document.getElementById('confidenceValue').textContent = `${confidence}%`;
     document.getElementById('meterFill').style.width = `${confidence}%`;
 
-    document.getElementById('resultLanguage').textContent = data.language;
-    document.getElementById('resultStatus').textContent = data.status;
-    document.getElementById('explanationText').textContent = data.explanation;
+    document.getElementById('resultLanguage').textContent = data.language || '-';
+    document.getElementById('resultStatus').textContent = data.status || '-';
+    document.getElementById('explanationText').textContent = data.explanation || '-';
 
     resultsSection.style.display = 'block';
 }
 
-// Error
+// ================= ERROR =================
 function showError(msg) {
     errorMessage.textContent = msg;
     errorMessage.style.display = 'block';
@@ -123,6 +143,6 @@ function hideError() {
     errorMessage.style.display = 'none';
 }
 
-// Init
+// ================= INIT =================
 updateAnalyzeButton();
 console.log('Voice Detection Frontend Ready');
